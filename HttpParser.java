@@ -20,9 +20,9 @@ public class HttpParser {
 		if(parsedLine.length != 3) return -1;
 		
 		//Command format checking MUST ACKNOWLEDGE OTHER EXISTING HTTP/1.0 COMMANDS 
-		if(parsedLine[0].equals("GET")) {	//or other HTTP/1.0 commands not supported
+		if(parsedLine[0].equals("DELETE") || parsedLine[0].equals("PUT") || parsedLine[0].equals("LINK") || parsedLine[0].equals("UNLINK")) {	
 			return -2;	//command not supported
-		}else if(!parsedLine[0].equals("POST") || !parsedLine[0].equals("HEAD")) {
+		}else if(!parsedLine[0].equals("GET") || !parsedLine[0].equals("POST") || !parsedLine[0].equals("HEAD")) {
 			return -3; // bad request
 		}else {
 			cmd = parsedLine[0];
