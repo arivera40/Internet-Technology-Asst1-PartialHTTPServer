@@ -44,23 +44,21 @@ public class ClientHandler extends Thread {
 				int status = parser.parseRequest(request);
 				if (status == -1) {
 					// respond with 404 Bad Request
-					responseHead.println("HTTP/1.0 400 Bad Request");
-					responseHead.println(); // blank line
+					responseHead.println("HTTP/1.0 400 Bad Request" + "\n\r");
 					responseHead.flush();
 
 				} else if (status == -2) {
 					// respond with 501 Not Implemented
-					responseHead.println("HTTP/1.0 501 Not Implemented");
-					responseHead.println(); // blank line
+					responseHead.println("HTTP/1.0 501 Not Implemented" + "\n\r");
 					responseHead.flush();
 
 				} else if (status == -3) {
 					// respond with HTTP Version Not Supported
-					responseHead.println("HTTP/1.0 505 HTTP Version Not Supported");
-					responseHead.println(); // blank line
+					responseHead.println("HTTP/1.0 505 HTTP Version Not Supported" + "\n\r");
 					responseHead.flush();
 
 				} else {
+					parser.getHttpResponse(responseHead, outStreamWriter);
 					// Client request is valid and expects 200 OK, 403 Forbidden, 404 Not Found, or 304 Not Modified (If-Modified-Since)
 					// getHttpResponse(parser) parser.getCommand = command, parser.getResource =
 					// resource, parser.getVersion = version
