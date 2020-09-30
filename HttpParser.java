@@ -5,25 +5,54 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.PrintWriter;
+import java.util.Date;
+import java.util.TimeZone;
+import java.text.SimpleDateFormat;
 
 public class HttpParser {
 	private String cmd;
 	private String resource;
+	private Date ifModified;
 	private double version;
 	
 	private File webroot;
 	
 	public HttpParser() {
 		resource = "";
+		ifModified = null;
 		cmd = "";
 		version = 0;
 		final File webroot = new File(".");
 	}
 	
 	//returns int to indicate status of request
-	public int parseRequest(String line) {
-		String[] parsedLine = line.split(" ");
-		if(parsedLine.length != 3) return -1; // 400 Bad Request
+	public int parseRequest(String request) {
+		String[] parsedLine = request.split(" ");
+		if(parsedLine.length < 3) {
+			return -1;	// 400 Bad Request
+		}
+		
+		//Has possible If-Modified parameter
+		if(parsedLine.length > 3) {
+			String date = "";
+			//if tag is valid then check for valid date
+			if(parsedLine[3].equals("If-Modified-Since:")) {
+				for(int i=4; i < parsedLine.length; i++) {
+					date += (i != parsedLine.length - 1) ? parsedLine[i] + " " : parsedLine[i];
+				}
+				String[] tempSplit = date.split(" ");
+				//if array size is 6 then most likely valid date so it is stored for comparison later
+				if(tempSplit.length == 6) {
+					try {
+						SimpleDateFormat form = new SimpleDateFormat("EEE, dd MMM yyyy hh:mm:ss 'Z");
+						form.setTimeZone(TimeZone.getTimeZone("GMT"));
+						ifModified = form.parse(date);
+					}catch(java.text.ParseException e) {
+						e.printStackTrace();
+					}
+				}
+			}
+		}
 		
 		//Command format checking
 		if(parsedLine[0].equals("get") || parsedLine[0].equals("post") || parsedLine[0].equals("head") ||
@@ -92,7 +121,7 @@ public class HttpParser {
 	
 	public void getHttpResponse(PrintWriter head, BufferedOutputStream body) {
 		File file = new File(webroot, resource);
-		if(file.exists() == false) {
+		if(!file.exists()) {
 			head.println("HTTP/1.0 404 Not Found" + "\n\r");
 			head.flush();
 			return;
@@ -103,10 +132,18 @@ public class HttpParser {
 			return;
 		}
 		int contentLength = (int) file.length();
-		long lastModified = file.lastModified();
+		Date lastModified = getModifiedDate(new Date(file.lastModified()));
+		
 		String type = getMIME();
 		
 		if(cmd.equals("GET") || cmd.equals("POST")) {
+			if(cmd.equals("GET") && lastModified != null) {
+				if(lastModified.before(ifModified)) {
+					head.println("HTTP/1.0 304 Not Modified" + "\n\r");
+					head.flush();
+					return;
+				}
+			}
 			byte[] requestedFileData = getRequestedFile(file, contentLength);
 			head.println("HTTP/1.0 200 OK");
 			head.println("Content-Type: " + type);
@@ -128,17 +165,19 @@ public class HttpParser {
 			head.println("Content-Encoding: identity" + "\n\r");
 			head.flush();
 		}
+		return;
 	}
 	
-	public String getResource() {
-		return resource;
-	}
-	
-	public String getCommand() {
-		return cmd;
-	}
-	
-	public double getVersion() {
-		return version;
+	private Date getModifiedDate(Date date) {
+		Date lastModified = null;
+		SimpleDateFormat form = new SimpleDateFormat("EEE, dd MMM yyyy hh:mm:ss 'Z'");
+		form.setTimeZone(TimeZone.getTimeZone("GMT"));
+		String dateStr = form.format(date);
+		try {
+			lastModified = form.parse(dateStr);
+		}catch(java.text.ParseException e) {
+			e.printStackTrace();
+		}
+		return lastModified;
 	}
 }
