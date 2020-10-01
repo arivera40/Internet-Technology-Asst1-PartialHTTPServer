@@ -1,33 +1,23 @@
 package test_HTTP;
 
-import java.io.BufferedInputStream;
-import java.io.BufferedOutputStream;
-import java.io.BufferedReader;
-import java.io.DataInputStream;
-import java.io.DataOutputStream;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.io.PrintWriter;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.ArrayList;
-import java.util.Date;
-import java.util.StringTokenizer;
 
 
 public class PartialHTTP1Server {
 
 	public static void main(String[] args) {
-//		int portNum = Integer.parseInt(args[0]);
+		int portNum = Integer.parseInt(args[0]);
+		ServerSocket socket = null;
 		try {
 			//Server is listening to port
-			ServerSocket socket = new ServerSocket(8080);
-			System.out.println("Server started.\nListening for connections on port : " + 8080 + " ...\n");
+			socket = new ServerSocket(portNum);
+			System.out.println("Server started.\nListening for connections on port : " + portNum + " ...\n");
 			
 			//Capacity for concurrent connections will start at 5
 			ArrayList<Thread> connections = new ArrayList<Thread>(5);
@@ -59,7 +49,13 @@ public class PartialHTTP1Server {
 				}
 			}
 		} catch (IOException e) {
-			System.err.println("Server Connection error : " + e.getMessage());
+		    if (socket != null && !socket.isClosed()) {
+		        try {
+		            socket.close();
+		        } catch (IOException f){
+		            f.printStackTrace(System.err);
+		        }
+		    }
 		}
 
 	}
