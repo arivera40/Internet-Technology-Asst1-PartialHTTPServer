@@ -22,7 +22,7 @@ public class HttpParser {
 		ifModified = null;
 		cmd = "";
 		version = 0;
-		final File webroot = new File(".");
+		webroot = new File(".");
 	}
 	
 	//returns int to indicate status of request
