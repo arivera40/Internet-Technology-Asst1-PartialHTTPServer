@@ -1,4 +1,4 @@
-package test_HTTP;
+package mypack;
 
 import java.io.BufferedOutputStream;
 import java.io.File;
@@ -27,8 +27,15 @@ public class HttpParser {
 	
 	//returns int to indicate status of request
 	public int parseRequest(String request) {
+		System.out.println("Enters parseRequest method");
 		String[] parsedLine = request.split(" ");
+		///////////////////////
+		for(int i=0; i < parsedLine.length; i++){
+			System.out.println(parsedLine[i]);
+		}
+		//////////////////////
 		if(parsedLine.length < 3) {
+			System.out.println("Returns not enough tokens in request header");
 			return -1;	// 400 Bad Request
 		}
 		
@@ -51,19 +58,25 @@ public class HttpParser {
 						e.printStackTrace();
 					}
 				}
+			}else{
+				System.out.println("Returns here because too many tokens that are not If-Modified-Since");
+				return -1; // 400 Bad Request
 			}
 		}
 		
 		//Command format checking
 		if(parsedLine[0].equals("get") || parsedLine[0].equals("post") || parsedLine[0].equals("head") ||
 				parsedLine[0].equals("delete") || parsedLine[0].equals("put") || parsedLine[0].equals("link") || parsedLine[0].equals("unlink")) {	
+			System.out.println("Returns because of lowercase command");
 			return -1;	// 400 Bad Request
 		}else if(parsedLine[0].equals("DELETE") || parsedLine[0].equals("PUT") || parsedLine[0].equals("LINK") || parsedLine[0].equals("UNLINK")) {
+			System.out.println("Returns because command not implemented");
 			return -2; // 501 Not Implemented
-		}else if(!parsedLine[0].equals("GET") || !parsedLine[0].equals("POST") || !parsedLine[0].equals("HEAD")){
-			return -1; // 400 Bad Request
-		}else {
+		}else if(parsedLine[0].equals("GET") || parsedLine[0].equals("POST") || parsedLine[0].equals("HEAD")){
 			cmd = parsedLine[0];
+		}else {
+			System.out.println("Returns because command not recognized");
+			return -1; // 400 Bad Request
 		}
 		
 		//Resource - Not sure if any format checking is necessary?
@@ -71,25 +84,34 @@ public class HttpParser {
 		
 		//Version number format checking
 		if(parsedLine[2].indexOf("HTTP/") != 0 || !Character.isDigit(parsedLine[2].charAt(5)) ) {
+			System.out.println("Returns because malformed Version number");
 			return -1;	// 400 Bad Request
 		}else {
 			boolean decimal = false;
-			parsedLine[2] = parsedLine[2].substring(5);
+			// System.out.println("parsedLine[2] before substring call = " + parsedLine[2] + "and its length = " + parsedLine[2].length());
+			parsedLine[2] = parsedLine[2].substring(5, parsedLine[2].length() - 4); //-4 to remove \n\r
+			System.out.println("parsedLine[2] = " + parsedLine[2]);
+			System.out.println("and its length = " + parsedLine[2].length());
 			for(int i=1; i < parsedLine[2].length(); i++) {	//we know first index is a digit
-				if(!Character.isDigit(parsedLine[2].charAt(i)) || parsedLine[2].charAt(i) != '.') {
+				if(!Character.isDigit(parsedLine[2].charAt(i)) && parsedLine[2].charAt(i) != '.') {
+					System.out.println("Returns because version number contains an alphabetic letter");
 					return -1; // 400 Bad Request - version number contains a alphabetic character instead of numeric
 				}else if(parsedLine[2].charAt(i) == '.' && decimal == true) {
+					System.out.println("Returns because contains multiple decimal places, malformed");
 					return -1; // 400 Bad Request - multiple decimals
 				}else if(parsedLine[2].charAt(i) == '.') {
 					decimal = true;
 				}
 			}
 			version = Double.parseDouble(parsedLine[2]);
+			System.out.println("version number = " + version);
 			if(version > 1.0) {
+				System.out.println("Returns because version number is not supported");
 				return -3; //version not supported
 			}
 		}
 		
+		System.out.println("Returns because it is a valid request");
 		return 0;
 		
 	}
@@ -122,11 +144,13 @@ public class HttpParser {
 	public void getHttpResponse(PrintWriter head, BufferedOutputStream body) {
 		File file = new File(webroot, resource);
 		if(!file.exists()) {
+			System.out.println("File doesn't exist within webroot");
 			head.println("HTTP/1.0 404 Not Found" + "\n\r");
 			head.flush();
 			return;
 		}
 		if(!file.canRead()) {
+			System.out.println("File is forbidden access");
 			head.println("HTTP/1.0 403 Forbidden" + "\n\r");
 			head.flush();
 			return;
@@ -134,9 +158,12 @@ public class HttpParser {
 		int contentLength = (int) file.length();
 		Date lastModified = getModifiedDate(new Date(file.lastModified()));
 		
+		System.out.println("Enters getMime method");
 		String type = getMIME();
+		System.out.println("getMime() returns type = "+ type);
 		
 		if(cmd.equals("GET") || cmd.equals("POST")) {
+			System.out.println("Enters GET/POST execution");
 			if(cmd.equals("GET") && lastModified != null) {
 				if(lastModified.before(ifModified)) {
 					head.println("HTTP/1.0 304 Not Modified" + "\n\r");
@@ -158,6 +185,7 @@ public class HttpParser {
 				e.printStackTrace();
 			}			
 		}else {
+			System.out.println("Enters HEAD");
 			head.println("HTTP/1.0 200 OK");
 			head.println("Content-Type: " + type);			
 			head.println("Content-Length: " + contentLength);
@@ -181,3 +209,4 @@ public class HttpParser {
 		return lastModified;
 	}
 }
+
