@@ -1,4 +1,5 @@
-package test_HTTP;
+import mypack.ClientHandler;
+// import mypack.HttpParser;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -25,7 +26,9 @@ public class PartialHTTP1Server {
 			while(true) {
 				int index = contractList(connections);
 				if(connections.size() <= 50 || index != -1) {
+
 					Socket connection = socket.accept();
+					System.out.println("Able to accept connection");
 					
 					//Obtaining input and output streams to pass to thread
 					InputStream input_stream = connection.getInputStream();
@@ -33,10 +36,14 @@ public class PartialHTTP1Server {
 					
 					//Create thread used to take care of communication between client and server
 					Thread t = new ClientHandler(connection, input_stream, output_stream);
-					connections.add(index, t);
+					System.out.println("---Able to create instance of extended Thread - ClientHandler");
+					connections.add(t);
+					System.out.println("Able to add thread to list");
 					t.start();
 				}else {
+					System.out.println("Crashes before accepting connection(2)");
 					Socket connection = socket.accept();
+					System.out.println("Crashes after accepting connection(2)");
 					
 					OutputStream output_stream = connection.getOutputStream();
 					PrintWriter response = new PrintWriter(output_stream);
@@ -65,10 +72,11 @@ public class PartialHTTP1Server {
 		for(int i=0; i < connections.size(); i++) {
 			if(!connections.get(i).isAlive()) {
 				index = (index == -1) ? i : index;
-				connections.set(i, null);
+				connections.remove(i);
 			}
 		}
 		return index;
 	}
 
 }
+
