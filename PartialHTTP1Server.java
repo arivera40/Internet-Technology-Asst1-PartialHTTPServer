@@ -18,7 +18,6 @@ public class PartialHTTP1Server {
 		try {
 			//Server is listening to port
 			socket = new ServerSocket(portNum);
-			System.out.println("Server started.\nListening for connections on port : " + portNum + " ...\n");
 			
 			//Capacity for concurrent connections will start at 5
 			ArrayList<Thread> connections = new ArrayList<Thread>(5);
@@ -28,7 +27,6 @@ public class PartialHTTP1Server {
 				if(connections.size() <= 50 || index != -1) {
 
 					Socket connection = socket.accept();
-					System.out.println("Able to accept connection");
 					
 					//Obtaining input and output streams to pass to thread
 					InputStream input_stream = connection.getInputStream();
@@ -36,19 +34,14 @@ public class PartialHTTP1Server {
 					
 					//Create thread used to take care of communication between client and server
 					Thread t = new ClientHandler(connection, input_stream, output_stream);
-					System.out.println("---Able to create instance of extended Thread - ClientHandler");
-					connections.add(t);
-					System.out.println("Able to add thread to list");
 					t.start();
 				}else {
-					System.out.println("Crashes before accepting connection(2)");
 					Socket connection = socket.accept();
-					System.out.println("Crashes after accepting connection(2)");
 					
 					OutputStream output_stream = connection.getOutputStream();
 					PrintWriter response = new PrintWriter(output_stream);
 					
-					response.println("HTTP/1.0 503 Service Unavailable" + "\n\r");
+					response.println("HTTP/1.0 503 Service Unavailable" + "\r\n");
 					response.flush();
 					response.close();
 					output_stream.close();
